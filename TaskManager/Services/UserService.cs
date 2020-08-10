@@ -25,14 +25,33 @@ namespace TaskManager.Services
 
         public User Get(string id) => _users.Find<User>(user => user.Id == id).FirstOrDefault();
 
-        public User Create(User user){
-            _users.InsertOne(user);
-            return user;
+        public Dictionary<string, Object> Create(User user) {
+            var resDictionary = new Dictionary<string, Object>();
+            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            try
+            {
+                _users.InsertOne(user);
+                resDictionary.Add("user", user);
+            }
+            catch (MongoWriteException mongoWriteException)
+            {
+                Console.WriteLine($"ERROR : {mongoWriteException.Message}");
+                resDictionary.Add("error", mongoWriteException.Message) ;
+            }
+            return resDictionary;
         }
 
         public User Update(string id, User userIn)
         {
-            _users.ReplaceOne(user => user.Id == id, userIn);
+            // ENSURE THAT PASSWORD IS NOT DOUBLE-HASHED HERE
+            try
+            {
+                _users.ReplaceOne(user => user.Id == id, userIn);
+                
+            }catch(MongoWriteException mongoWriteException)
+            {
+                return null;
+            }
             return userIn;
         }
 
@@ -48,17 +67,18 @@ namespace TaskManager.Services
             return (Int32)dr.DeletedCount;
         }
 
-        public static User VerifyUserWithToken(string _id, string token)
+        public User VerifyUserWithToken(string _id, string token)
         {
             try
             {
-                User user = _users.FindSync<User>(user => user.Id == _id && user.Tokens.Contains<string>(token)).Single();
+                User user = _users.FindSync<User>(user => user.Id == _id && user.Tokens.Contains<string>(token)).FirstOrDefault();
                 return user;
-            }catch(Exception ex)
+            } catch (Exception ex)
             {
                 Console.WriteLine($"{ex.GetType()} :: {ex.Message}");
                 return null;
             }
         }
+
     }
 }

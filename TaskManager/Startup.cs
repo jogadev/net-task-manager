@@ -31,8 +31,6 @@ namespace TaskManager
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var secretKey = Encoding.ASCII.GetBytes(Configuration.GetValue<string>("SecretKey"));
-
             services.Configure<TaskManagerDatabaseSettings>(Configuration.GetSection(nameof (TaskManagerDatabaseSettings)));
             services.AddSingleton<ITaskManagerDatabaseSettings>(sp => sp.GetRequiredService<IOptions<TaskManagerDatabaseSettings>>().Value);
             services.AddSingleton<UserService>();
@@ -51,7 +49,8 @@ namespace TaskManager
 
             app.UseRouting();
 
-            app.UseWhen(matchEndpoint("GET", "/users"), MiddlewareCollection.RequireToken);
+            app.UseMiddleware<Authentication>();
+            app.UseMiddleware<UserValidations>();
 
             app.UseEndpoints(endpoints =>
             {
@@ -63,7 +62,7 @@ namespace TaskManager
         {
             return ctx =>
             {
-                Console.Write($"{ctx.Request.Method}  {ctx.Request.Path}   ::   {ctx.Request.Method == method && ctx.Request.Path == path}");
+                //Console.WriteLine($"{ctx.Request.Method}  {ctx.Request.Path}   ::   {ctx.Request.Method == method && ctx.Request.Path == path}");
                 return ctx.Request.Method == method && ctx.Request.Path == path;
             };
         }

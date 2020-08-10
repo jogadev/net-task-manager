@@ -19,7 +19,7 @@ namespace TaskManager.Models
         [BsonElement("password")]
         public string Password { get; set; }
         [BsonElement("tokens")]
-        public string[] Tokens { get; set; }
+        public List<string> Tokens { get; set; }
         [BsonElement("avatar")]
         public string Avatar { get; set; }
         [BsonElement("age")]
